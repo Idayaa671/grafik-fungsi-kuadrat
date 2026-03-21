@@ -1,0 +1,110 @@
+body{
+font-family:Arial;
+background:linear-gradient(120deg,#dbeafe,#f0f9ff);
+text-align:center;
+padding:20px;
+}
+
+.judul{
+font-size:32px;
+margin-bottom:20px;
+}
+
+.card{
+background:white;
+padding:20px;
+margin:auto;
+width:420px;
+border-radius:12px;
+box-shadow:0 5px 15px rgba(0,0,0,0.2);
+margin-top:20px;
+animation:fade 0.6s;
+}
+
+button{
+padding:10px 20px;
+margin:5px;
+border:none;
+border-radius:8px;
+background:#3b82f6;
+color:white;
+font-size:16px;
+cursor:pointer;
+}
+
+button:hover{
+background:#1d4ed8;
+transform:scale(1.05);
+}
+
+.hidden{
+display:none;
+}
+
+input{
+padding:8px;
+margin:5px;
+border-radius:6px;
+border:1px solid #ccc;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th,td{
+border:1px solid #ccc;
+padding:8px;
+}
+
+
+@keyframes fade{
+from{opacity:0;transform:translateY(20px);}
+to{opacity:1;transform:translateY(0);}
+}
+body {
+  margin: 0;
+  padding: 10px;
+  font-family: Arial, sans-serif;
+}
+
+/* Card biar fleksibel */
+.card {
+  max-width: 600px;
+  margin: auto;
+  padding: 15px;
+}
+
+/* Tombol responsif */
+button {
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0;
+  font-size: 16px;
+}
+
+/* Input */
+input {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+}
+
+/* Tabel biar tidak keluar layar */
+table {
+  width: 100%;
+  overflow-x: auto;
+  display: block;
+}
+
+/* HP kecil */
+@media (max-width: 600px) {
+  h1 {
+    font-size: 20px;
+  }
+
+  .card {
+    padding: 10px;
+  }
+}

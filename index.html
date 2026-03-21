@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Aplikasi Belajar Grafik Fungsi Kuadrat</title>
+
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<h1 class="judul">📈 Belajar Grafik Fungsi Kuadrat</h1>
+
+<div id="loginBox" class="card">
+<h2>Masukkan Nama Siswa</h2>
+<input type="text" id="namaSiswa" placeholder="Nama anda">
+<button onclick="mulaiApp()">Masuk</button>
+</div>
+
+<div id="menuUtama" class="hidden">
+
+<h2>Menu Pembelajaran</h2>
+
+<div class="menu">
+
+<button onclick="pilihMode('eksplorasi')">🔬 Mode Eksplorasi</button>
+
+<button onclick="pilihMode('latihan')">📘 Mode Latihan</button>
+
+<button onclick="pilihMode('tantangan')">🏆 Mode Tantangan</button>
+
+<button onclick="bukaDashboard()">📊 Dashboard Guru</button>
+
+</div>
+
+</div>
+
+<div id="pilihLevel" class="hidden card">
+
+<h2>Pilih Level</h2>
+
+<button onclick="mulaiLevel('mudah')">
+Mudah <br>
+⏱ 7 menit <br>
+⭐ 20 poin
+</button>
+
+<button onclick="mulaiLevel('sedang')">
+Sedang <br>
+⏱ 10 menit <br>
+⭐ 35 poin
+</button>
+
+<button onclick="mulaiLevel('susah')">
+Sulit <br>
+⏱ 15 menit <br>
+⭐ 50 poin
+</button>
+
+</div>
+
+<div id="areaSoal" class="hidden card">
+
+<h2 id="judulMode"></h2>
+
+<p id="soal"></p>
+
+<input type="number" id="jawabanUser">
+
+<button onclick="cekJawaban()">Cek Jawaban</button>
+<button id="btnNext" onclick="lanjutSoal()" disabled>Soal Berikut</button>
+
+
+<p id="penjelasan"></p>
+
+<div id="hasilAnalisis"></div>
+
+<canvas id="grafik" height="150"></canvas>
+
+<p id="skor"></p>
+
+</div>
+
+<div id="eksplorasiBox" class="hidden card">
+
+<h2>🔬 Mode Eksplorasi Fungsi Kuadrat</h2>
+
+<p>Masukkan fungsi kuadrat, contoh:</p>
+<p><b>y = 2x^2 - 4x + 1</b></p>
+
+<input type="text" id="inputFungsi" placeholder="contoh: y = x^2 - 4x + 3">
+
+<button onclick="prosesEksplorasi()">Proses</button>
+
+
+<div id="hasilEksplorasi"></div>
+
+<canvas id="grafikEksplorasi"></canvas>
+
+</div>
+
+<div id="dashboard" class="hidden card">
+
+<h2>Dashboard Guru</h2>
+
+<table id="tabelHasil">
+
+<tr>
+<th>Nama</th>
+<th>Mode</th>
+<th>Level</th>
+<th>Poin</th>
+</tr>
+
+</table>
+
+<div id="leaderboard"></div>
+
+<button onclick="exportExcel()">Export Excel</button>
+<button onclick="resetData()">🗑 Reset Data</button>
+<button onclick="tutupDashboard()">⬅ Kembali</button>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
