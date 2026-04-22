@@ -1,4 +1,4 @@
-let mode="";
+mode="";
 let level="";
 let poin=0;
 let nomorSoal = 0;
@@ -124,16 +124,29 @@ timerInterval = setInterval(function(){
 
 waktuSisa--;
 
+// update tampilan skor
 document.getElementById("skor").innerHTML =
 "Soal: "+nomorSoal+"/"+totalSoal+
 " | Poin: "+poin+
 " | Waktu: "+waktuSisa+" detik";
 
+// =======================
+// ⛔️ JIKA WAKTU HABIS
+// =======================
 if(waktuSisa <= 0){
 
 clearInterval(timerInterval);
-alert("Waktu habis!");
-selesaiGame();
+
+alert("⏰ Waktu habis!");
+
+// simpan hasil
+simpanHasil();
+
+// tampilkan hasil akhir
+tampilkanHasilAkhir();
+
+// langsung ke dashboard (opsional tapi bagus)
+bukaDashboard();
 
 }
 
@@ -158,7 +171,7 @@ gambarGrafik(a,b,c);
 
 function simpanHasil(){
 
-let data={
+let dataBaru = {
 nama:nama,
 mode:mode,
 level:level,
@@ -166,7 +179,14 @@ poin:poin,
 time:Date.now()
 };
 
-localStorage.setItem(nama,JSON.stringify(data));
+// ambil data lama
+let dataLama = JSON.parse(localStorage.getItem("hasilGame")) || [];
+
+// tambah data baru
+dataLama.push(dataBaru);
+
+// simpan kembali
+localStorage.setItem("hasilGame", JSON.stringify(dataLama));
 
 }
 
@@ -174,7 +194,6 @@ function bukaDashboard(){
 
 document.getElementById("dashboard").classList.remove("hidden");
 
-/* RESET TABEL */
 let tabel=document.getElementById("tabelHasil");
 
 tabel.innerHTML = `
@@ -186,22 +205,13 @@ tabel.innerHTML = `
 </tr>
 `;
 
-/* AMBIL DATA */
-let semuaData = [];
+// ambil data dari localStorage
+let semuaData = JSON.parse(localStorage.getItem("hasilGame")) || [];
 
-for(let i=0;i<localStorage.length;i++){
-
-let key=localStorage.key(i);
-let data=JSON.parse(localStorage.getItem(key));
-
-semuaData.push(data);
-
-}
-
-/* URUTKAN DARI TERBESAR */
+// urutkan
 semuaData.sort((a,b)=>b.poin-a.poin);
 
-/* TAMPILKAN KE TABEL */
+// tampilkan
 semuaData.forEach((data)=>{
 let row=tabel.insertRow();
 
@@ -211,19 +221,12 @@ row.insertCell(2).innerHTML=data.level;
 row.insertCell(3).innerHTML=data.poin;
 });
 
-/* ======================= */
-/* LEADERBOARD TOP 3 */
-/* ======================= */
-
+// leaderboard
 let leaderboardHTML = "<h3>🏆 Top 3 Siswa Terbaik</h3>";
 
 for(let i=0;i<3 && i<semuaData.length;i++){
 
-let medal = "";
-
-if(i==0) medal="🥇";
-if(i==1) medal="🥈";
-if(i==2) medal="🥉";
+let medal = i==0 ? "🥇" : i==1 ? "🥈" : "🥉";
 
 leaderboardHTML += `
 <p>${medal} ${semuaData[i].nama} - ${semuaData[i].poin} poin</p>
@@ -235,26 +238,6 @@ document.getElementById("leaderboard").innerHTML = leaderboardHTML;
 
 }
 
-function tutupDashboard(){
-  document.getElementById("dashboard").classList.add("hidden");
-  document.getElementById("menuUtama").classList.remove("hidden");
-}
-
-
-function exportExcel(){
-
-let table=document.getElementById("tabelHasil").outerHTML;
-
-let data='data:application/vnd.ms-excel,'+encodeURIComponent(table);
-
-let link=document.createElement("a");
-
-link.href=data;
-link.download="hasil_siswa.xls";
-
-link.click();
-
-}
 function soalBerikut(){
 
 buatSoal();
@@ -269,35 +252,87 @@ let chartEksplorasi=null;
 
 function prosesEksplorasi(){
 
-let fungsi=document.getElementById("inputFungsi").value;
+let fungsi = document.getElementById("inputFungsi").value;
 
-fungsi=fungsi.replace("y=","");
-fungsi=fungsi.replace(/\s/g,'');
+// =======================
+// 🔥 NORMALISASI WAJIB
+// =======================
+fungsi = fungsi
+  .toLowerCase()
+  .replace("y=", "")
+  .replace(/\s+/g, "")
+  .replace(/²/g, "^2")   // ⬅️ kunci utama
+  .replace(/−/g, "-");
 
-let a=1;
-let b=0;
-let c=0;
+// =======================
+// 🔥 PARSING AMAN
+// =======================
+let a = 0, b = 0, c = 0;
 
-let matchA=fungsi.match(/([+-]?\d*)x\^2/);
-if(matchA){
-a=matchA[1];
-if(a===""||a==="+") a=1;
-if(a==="-" ) a=-1;
-a=parseFloat(a);
+// pecah jadi suku
+let suku = fungsi.match(/[+-]?[^+-]+/g);
+
+if(!suku){
+  alert("Format fungsi tidak dikenali!");
+  return;
 }
 
-let matchB=fungsi.match(/([+-]\d*)x(?!\^)/);
-if(matchB){
-b=parseFloat(matchB[1]);
+suku.forEach(term => {
+
+  // ===== ax² atau ax^2 =====
+  if(/x(\^2|²)/.test(term)){
+  let coef = term.replace(/x(\^2|²)/, "");
+
+  // bersihkan karakter aneh
+  coef = coef.trim();
+
+  if(coef === "" || coef === "+") {
+    a += 1;
+  }
+  else if(coef === "-") {
+    a += -1;
+  }
+  else {
+    let nilai = parseFloat(coef);
+
+    // fallback kalau gagal parsing
+    if(isNaN(nilai)){
+      a += 1;
+    }else{
+      a += nilai;
+    }
+  }
 }
 
-let matchC=fungsi.match(/([+-]\d+)$/);
-if(matchC){
-c=parseFloat(matchC[1]);
+  // ====== bx ======
+  else if(term.includes("x")){
+    let coef = term.replace("x","");
+
+    if(coef === "" || coef === "+") b += 1;
+    else if(coef === "-") b += -1;
+    else b += parseFloat(coef);
+  }
+
+  // ====== konstanta ======
+  else{
+    let val = parseFloat(term);
+    if(!isNaN(val)) c += val;
+  }
+
+});
+
+// =======================
+// VALIDASI
+// =======================
+if(isNaN(a) || isNaN(b) || isNaN(c)){
+  alert("Terjadi kesalahan membaca fungsi!");
+  return;
 }
 
+// =======================
+// OUTPUT
+// =======================
 tampilkanPembahasan(a,b,c);
-
 gambarGrafikEksplorasi(a,b,c);
 
 }
@@ -309,14 +344,13 @@ let yp = a*xs*xs + b*xs + c;
 
 let diskriminan = b*b - 4*a*c;
 
-let x1="";
-let x2="";
-let potongX="";
+let x1, x2;
+let potongX = "";
 
-if(diskriminan>0){
+if(diskriminan > 0){
 
-x1 = (-b + Math.sqrt(diskriminan))/(2*a);
-x2 = (-b - Math.sqrt(diskriminan))/(2*a);
+x1 = (-b + Math.sqrt(diskriminan)) / (2*a);
+x2 = (-b - Math.sqrt(diskriminan)) / (2*a);
 
 potongX = `
 Titik potong sumbu X ada dua:<br>
@@ -326,8 +360,7 @@ Titik: (${x1.toFixed(2)},0) dan (${x2.toFixed(2)},0)
 `;
 
 }
-
-else if(diskriminan==0){
+else if(diskriminan === 0){
 
 x1 = (-b)/(2*a);
 
@@ -337,23 +370,16 @@ Titik: (${x1.toFixed(2)},0)
 `;
 
 }
-
 else{
 
 potongX = `
-Grafik tidak memotong sumbu X karena
-D < 0
+Grafik tidak memotong sumbu X karena D < 0
 `;
 
 }
 
 let hasil = `
-
 <h3>Analisis Fungsi Kuadrat</h3>
-
-<p>Bentuk umum:</p>
-
-<b>y = ax² + bx + c</b>
 
 <p>a = ${a}</p>
 <p>b = ${b}</p>
@@ -362,127 +388,88 @@ let hasil = `
 <hr>
 
 <h3>Sumbu Simetri</h3>
-
-x = -b / 2a
-
-<br>
-
-x = -(${b}) / (2 × ${a})
-
-<br>
-
 <b>x = ${xs.toFixed(2)}</b>
 
 <hr>
 
 <h3>Titik Puncak</h3>
-
-xp = ${xs.toFixed(2)}
-
-<br>
-
-yp = ${yp.toFixed(2)}
-
-<br>
-
-<b>(${xs.toFixed(2)} , ${yp.toFixed(2)})</b>
+<b>(${xs.toFixed(2)}, ${yp.toFixed(2)})</b>
 
 <hr>
 
-<h3>Titik Potong Sumbu Y</h3>
-
-Jika x = 0
-
-<br>
-
-y = ${c}
-
-<br>
-
-<b>(0 , ${c})</b>
-
-<hr>
-
-<h3>Titik Potong Sumbu X</h3>
-
-Diskriminan
-
-<br>
-
-D = b² - 4ac
-
-<br>
-
-D = (${b})² - 4(${a})(${c})
-
-<br>
-
-D = ${diskriminan}
-
-<br><br>
-
+<h3>Titik Potong X</h3>
 ${potongX}
-
-<hr>
-
-<h3>Arah Parabola</h3>
-
-${a>0 ? "Parabola terbuka ke atas" : "Parabola terbuka ke bawah"}
-
 `;
-if(mode==="eksplorasi"){
+
+document.getElementById("hasilAnalisis").innerHTML = hasil;
+
+if(mode === "eksplorasi"){
 document.getElementById("hasilEksplorasi").innerHTML = hasil;
 }
-document.getElementById("hasilAnalisis").innerHTML = hasil;
+
 }
 
-
-function gambarGrafikEksplorasi(a,b,c){
+function gambarGrafikEksplorasi(a,b,c) {
 
 if(chartEksplorasi){
 chartEksplorasi.destroy();
 }
 
-let x=[];
-let y=[];
+let xs = -b/(2*a);
 
-for(let i=-10;i<=10;i++){
+// tentukan range dinamis di sekitar titik puncak
+let range = 10;
 
-x.push(i);
+// kalau grafik terlalu curam, kecilkan range
+if(Math.abs(a) > 3){
+  range = 5;
+}
 
-y.push(a*i*i+b*i+c);
+// kalau sangat landai, perbesar range
+if(Math.abs(a) < 1){
+  range = 15;
+}
 
+let xmin = Math.floor(xs - range);
+let xmax = Math.ceil(xs + range);
+
+let x = [];
+let y = [];
+
+for(let i = xmin; i <= xmax; i++){
+  x.push(i);
+  y.push(a*i*i + b*i + c);
 }
 
 chartEksplorasi = new Chart(document.getElementById("grafikEksplorasi"),{
-
-type:'line',
-
-data:{
-labels:x,
-datasets:[{
-label:"Grafik Fungsi Kuadrat",
-data:y,
-borderWidth:3,
-tension:0.3
-}]
-},
-
-options:{
-scales:{
-x:{
-title:{display:true,text:"x"}
-},
-y:{
-title:{display:true,text:"y"}
+  type:'line',
+  data:{
+    labels:x,
+    datasets:[{
+      label:"Grafik Fungsi Kuadrat",
+      data:y,
+      borderWidth:3,
+      tension:0.3
+    }]
+  },
+  options:{
+    scales:{
+      x:{
+        title:{display:true,text:"x"},
+        ticks:{ stepSize:1 }
+      },
+      y:{
+        title:{display:true,text:"y"},
+        ticks:{
+          callback: function(value){
+            return value.toFixed(0);
+          }
+        }
+      }
+    }
+  }
+}); // 
 }
-}
-}
-
-});
-
-}
-
 
 function buatSoal(){
 
@@ -612,6 +599,9 @@ document.getElementById("skor").innerHTML="Poin: "+poin;
 let btn = document.getElementById("btnNext");
 btn.disabled = false;
 btn.classList.remove("hidden");
+// 🔒 KUNCI JAWABAN (ANTI CURANG)
+document.getElementById("jawabanUser").disabled = true;
+document.getElementById("btnCek").disabled = true;
 
 }
 
@@ -623,6 +613,8 @@ if(totalSoal === 0) return;
 document.getElementById("jawabanUser").value="";
 document.getElementById("penjelasan").innerHTML="";
 document.getElementById("hasilAnalisis").innerHTML="";
+document.getElementById("jawabanUser").disabled = false;
+document.getElementById("btnCek").disabled = false;
 
 /* reset tombol */
 let btn = document.getElementById("btnNext");
@@ -646,8 +638,10 @@ buatSoal();
 
 }else{
 
-selesaiGame();
-simpanHasil();
+clearInterval(timerInterval);
+
+simpanHasil();           // simpan dulu
+tampilkanHasilAkhir();   // tampilkan hasil
 
 }
 
@@ -659,98 +653,102 @@ if(chartLatihan){
 chartLatihan.destroy();
 }
 
-let xs=-b/(2*a);
-let yp=a*xs*xs+b*xs+c;
+/* HITUNG NILAI PENTING */
+let xs = -b/(2*a);
+let yp = a*xs*xs + b*xs + c;
 
-let diskriminan=b*b-4*a*c;
+let diskriminan = b*b - 4*a*c;
 
-let x=[];
-let y=[];
+/* =========================
+AUTO SCALE (SAMA KONSEP EKSPLORASI)
+========================= */
 
-for(let i=-10;i<=10;i++){
+let range = 10;
 
-x.push(i);
-y.push(a*i*i+b*i+c);
-
+if(Math.abs(a) > 3){
+  range = 5;
 }
 
-let titikX=[];
-let titikY=[];
-
-titikX.push(xs);
-titikY.push(yp);
-
-titikX.push(0);
-titikY.push(c);
-
-if(diskriminan>=0){
-
-let x1=(-b+Math.sqrt(diskriminan))/(2*a);
-let x2=(-b-Math.sqrt(diskriminan))/(2*a);
-
-titikX.push(x1);
-titikY.push(0);
-
-titikX.push(x2);
-titikY.push(0);
-
+if(Math.abs(a) < 1){
+  range = 15;
 }
+
+let xmin = Math.floor(xs - range);
+let xmax = Math.ceil(xs + range);
+
+let x = [];
+let y = [];
+
+for(let i = xmin; i <= xmax; i++){
+  x.push(i);
+  y.push(a*i*i + b*i + c);
+}
+
+/* =========================
+TITIK PENTING
+========================= */
+
+let titik = [];
+
+// titik puncak
+titik.push({x: xs, y: yp});
+
+// titik potong Y
+titik.push({x: 0, y: c});
+
+// titik potong X (jika ada)
+if(diskriminan >= 0){
+let x1 = (-b + Math.sqrt(diskriminan))/(2*a);
+let x2 = (-b - Math.sqrt(diskriminan))/(2*a);
+
+titik.push({x: x1, y: 0});
+titik.push({x: x2, y: 0});
+}
+
+/* =========================
+CHART
+========================= */
 
 chartLatihan = new Chart(document.getElementById("grafik"),{
 
 type:'line',
 
 data:{
-
 labels:x,
-
 datasets:[
-
 {
 label:"Grafik Fungsi",
 data:y,
 borderWidth:3,
 tension:0.3
 },
-
 {
 type:'scatter',
 label:"Titik Penting",
-data:titikX.map((v,i)=>({x:v,y:titikY[i]})),
+data:titik,
 pointRadius:6
 }
-
 ]
-
 },
 
 options:{
 scales:{
-x:{title:{display:true,text:"x"}},
-y:{title:{display:true,text:"y"}}
+x:{
+title:{display:true,text:"x"},
+ticks:{ stepSize:1 }
+},
+y:{
+title:{display:true,text:"y"},
+ticks:{
+callback:function(value){
+return value.toFixed(0);
+}
+}
+}
 }
 }
 
 });
-
-}
-
-document.getElementById("hasilEksplorasi").innerHTML="";
-document.getElementById("hasilAnalisis").innerHTML="";
-document.getElementById("penjelasan").innerHTML="";
-
-
-function selesaiGame(){
-
-clearInterval(timerInterval);
-
-tampilkanHasilAkhir();
-
-simpanHasil();
-
-/* reset tampilan */
-document.getElementById("areaSoal").classList.add("hidden");
-document.getElementById("menuUtama").classList.remove("hidden");
 
 }
 
@@ -790,6 +788,24 @@ else{
    pesan = "🔥 Jangan menyerah! Coba lagi dan kamu pasti bisa!";
 }
 
+function selesaiGame(){
+
+clearInterval(timerInterval);
+
+// simpan hasil
+simpanHasil();
+
+// tampilkan hasil akhir
+tampilkanHasilAkhir();
+
+// buka dashboard
+bukaDashboard();
+
+// sembunyikan area soal
+document.getElementById("areaSoal").classList.add("hidden");
+
+}
+
 /* tampilkan hasil */
 alert(
 "Selesai!\n\n" +
@@ -800,5 +816,94 @@ alert(
 "Nilai: " + nilai.toFixed(0) + "\n\n" +
 pesan
 );
+
+}
+
+function exportExcel(){
+
+let tabel = document.getElementById("tabelHasil");
+
+if(!tabel){
+alert("Tabel hasil tidak ditemukan!");
+return;
+}
+
+let tableHTML = tabel.outerHTML.replace(/ /g, "%20");
+
+let filename = "hasil_siswa.xls";
+
+let dataType = 'application/vnd.ms-excel';
+
+let link = document.createElement("a");
+
+link.href = 'data:' + dataType + ', ' + tableHTML;
+link.download = filename;
+
+document.body.appendChild(link);
+
+link.click();
+
+document.body.removeChild(link);
+}
+
+function resetData(){
+
+let konfirmasi = confirm("Yakin ingin menghapus semua data hasil?");
+
+if(!konfirmasi) return;
+
+// hapus data leaderboard
+localStorage.removeItem("hasilGame");
+
+// optional: reset UI tabel
+let tabel = document.getElementById("tabelHasil");
+
+if(tabel){
+tabel.innerHTML = `
+<tr>
+<th>Nama</th>
+<th>Mode</th>
+<th>Level</th>
+<th>Poin</th>
+</tr>
+`;
+}
+
+// reset leaderboard juga
+document.getElementById("leaderboard").innerHTML = "";
+
+alert("Data berhasil direset!");
+}
+
+function tutupDashboard(){
+
+// hentikan timer kalau ada
+clearInterval(timerInterval);
+
+// sembunyikan dashboard
+document.getElementById("dashboard").classList.add("hidden");
+
+// tampilkan menu utama lagi
+document.getElementById("menuUtama").classList.remove("hidden");
+
+// sembunyikan bagian lain (biar bersih)
+document.getElementById("areaSoal").classList.add("hidden");
+document.getElementById("eksplorasiBox").classList.add("hidden");
+document.getElementById("pilihLevel").classList.add("hidden");
+
+}
+
+function kembaliKeMenu(){
+
+clearInterval(timerInterval);
+
+// sembunyikan semua
+document.getElementById("dashboard").classList.add("hidden");
+document.getElementById("areaSoal").classList.add("hidden");
+document.getElementById("eksplorasiBox").classList.add("hidden");
+document.getElementById("pilihLevel").classList.add("hidden");
+
+// tampilkan menu utama
+document.getElementById("menuUtama").classList.remove("hidden");
 
 }
