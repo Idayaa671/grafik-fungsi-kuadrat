@@ -111,3 +111,13 @@ table {
     padding: 10px;
   }
 }
+
+.app-credit{
+  position: fixed;
+  bottom: 12px;
+  left: 12px;
+  font-size: 15px;
+  color: rgba(0,0,0,0.6);
+  font-family: Arial, sans-serif;
+  z-index: 999;
+}
